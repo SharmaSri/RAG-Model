@@ -1,0 +1,15 @@
+langchain==0.2.11
+langchain-community==0.2.10
+langchain-openai==0.1.21
+langchain-huggingface==0.1.2
+langchain-text-splitters==0.2.2
+
+chromadb==0.5.3
+sentence-transformers
+pypdf
+faiss-cpu
+tiktoken
+python-dotenv
+
+flask
+flask-cors

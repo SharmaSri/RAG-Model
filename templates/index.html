@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>RAG Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; max-width:800px;}
+    #chat { border:1px solid #ddd; padding:10px; height:400px; overflow:auto; }
+    .msg { margin:8px 0; }
+    .user { color: #0b5; }
+    .bot { color: #05a; }
+    textarea { width:100%; height:80px; }
+    button { padding:8px 12px; }
+  </style>
+</head>
+<body>
+  <h1>RAG PDF Assistant (local)</h1>
+
+  <div id="chat"></div>
+
+  <form id="qform">
+    <textarea id="q" placeholder="Ask something from your PDFs..."></textarea>
+    <div style="margin-top:8px;">
+      <button type="submit">Ask</button>
+      <input type="file" id="file" accept=".pdf" />
+      <button id="uploadBtn" type="button">Upload & Ingest PDF</button>
+    </div>
+  </form>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const qform = document.getElementById('qform');
+    const qinput = document.getElementById('q');
+    const fileInput = document.getElementById('file');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    function addMsg(who, text) {
+      const d = document.createElement('div');
+      d.className = 'msg ' + (who === 'user' ? 'user' : 'bot');
+      d.innerText = (who === 'user' ? 'You: ' : 'Bot: ') + text;
+      chat.appendChild(d);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    qform.onsubmit = async (e) => {
+      e.preventDefault();
+      const q = qinput.value.trim();
+      if (!q) return;
+      addMsg('user', q);
+      qinput.value = '';
+      addMsg('bot', 'Thinking...');
+
+      const res = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: q })
+      });
+      const data = await res.json();
+      // Replace the last "Thinking..." with actual answer
+      chat.removeChild(chat.lastChild);
+      addMsg('bot', data.answer || 'No answer.');
+    };
+
+    uploadBtn.onclick = async () => {
+      if (!fileInput.files.length) { alert('Choose a PDF first'); return; }
+      const fd = new FormData();
+      fd.append('file', fileInput.files[0]);
+      uploadBtn.disabled = true;
+      uploadBtn.innerText = 'Uploading...';
+      const res = await fetch('/ingest', { method: 'POST', body: fd });
+      const data = await res.json();
+      uploadBtn.disabled = false;
+      uploadBtn.innerText = 'Upload & Ingest PDF';
+      alert(data.message || 'Done');
+    };
+  </script>
+</body>
+</html>
